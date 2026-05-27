@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>if(sessionStorage.getItem('acr_auth')!=='ok'&&!['localhost','127.0.0.1'].includes(location.hostname)){location.replace('https://john-corredor-coffee.github.io/atomic-dashboard/?return='+encodeURIComponent(location.href));}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost of Goods Calculator — Atomic Coffee Roasters</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #f4f4f2;
+      color: rgba(0,0,0,0.75);
+      min-height: 100vh;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+    }
+
+    .announcement {
+      background: #0a0a0a;
+      color: white;
+      text-align: center;
+      padding: 10px 24px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      background: #ffffff;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand { font-family: 'Cooper Black', serif; font-size: 15px; font-weight: 400; color: #0a0a0a; letter-spacing: 0.02em; }
+    .nav-sub { font-size: 12px; color: rgba(0,0,0,0.4); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 {
+      font-family: 'Cooper Black', serif;
+      font-size: 34px;
+      font-weight: 400;
+      color: #0a0a0a;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+    }
+    .page-header p { font-size: 15px; color: rgba(0,0,0,0.5); line-height: 1.65; max-width: 560px; }
+
+    /* ── TABS ── */
+    .tab-nav {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 32px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 12px 22px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.4);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: #0a0a0a; }
+    .tab-btn.active { color: #0a0a0a; border-bottom-color: #0a0a0a; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── CARD ── */
+    .card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      padding: 14px 24px;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card-header:hover { background: #f0f0ee; }
+    .card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #0a0a0a; }
+    .card-hint { font-size: 12px; color: rgba(0,0,0,0.38); }
+    .card-body { padding: 20px 24px; }
+
+    /* ── COLLAPSIBLE CARDS ── */
+    .card-chevron {
+      font-size: 11px;
+      color: rgba(0,0,0,0.3);
+      margin-left: 12px;
+      transition: transform 0.18s ease;
+      flex-shrink: 0;
+    }
+    .card.collapsed .card-chevron { transform: rotate(-90deg); }
+    .card.collapsed > :not(.card-header) { display: none !important; }
+    .card.collapsed .card-header { border-bottom-color: transparent; }
+
+    /* ── CONFIG GRID ── */
+    .config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .config-item label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(0,0,0,0.45); margin-bottom: 6px; }
+    .config-item input, .config-item select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d0d0d0;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      color: #0a0a0a;
+      background: white;
+    }
+    .config-item input:focus, .config-item select:focus { outline: none; border-color: #0a0a0a; }
+    .config-note { font-size: 11px; color: rgba(0,0,0,0.35); margin-top: 4px; }
+
+    /* ── TABLE ── */
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 11px 20px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(0,0,0,0.4);
+      background: #fafafa;
+      border-bottom: 1px solid #e8e8e8;
+      font-weight: 700;
+    }
+    th.right, td.right { text-align: right; }
+    th.center, td.center { text-align: center; }
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+    tr:last-child td { border-bottom: none; }
+    .avg-row td { background: #fafafa; font-weight: 700; border-top: 2px solid #e0e0e0; border-bottom: none; }
+
+    .drink-name { font-weight: 700; font-size: 14px; color: #0a0a0a; }
+    .drink-detail { font-size: 11px; color: rgba(0,0,0,0.38); margin-top: 2px; }
+
+    /* ── PRICE INPUT ── */
+    .price-wrap { display: flex; align-items: center; gap: 0; }
+    .price-symbol {
+      padding: 7px 10px;
+      background: #f0f0f0;
+      border: 1px solid #d0d0d0;
+      border-right: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.5);
+    }
+    .price-input {
+      width: 80px;
+      padding: 7px 10px;
+      border: 1px solid #d0d0d0;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      color: #0a0a0a;
+      background: white;
+    }
+    .price-input:focus { outline: none; border-color: #0a0a0a; }
+    .price-input:not([value=""]):not([value="0"]) { background: #f0fdf4; border-color: #10b981; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-gray { background: #f0f0f0; color: rgba(0,0,0,0.4); }
+
+    .cost-value { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.4);
+      margin-bottom: 12px;
+    }
+
+    /* ── COLD BREW CARDS ── */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .product-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 20px;
+    }
+    .product-card .pc-cat { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(0,0,0,0.35); margin-bottom: 6px; }
+    .product-card .pc-name { font-family: 'Cooper Black', serif; font-size: 18px; font-weight: 400; color: #0a0a0a; margin-bottom: 4px; }
+    .product-card .pc-detail { font-size: 12px; color: rgba(0,0,0,0.45); margin-bottom: 16px; line-height: 1.5; }
+    .product-card .pc-cost { font-size: 13px; color: rgba(0,0,0,0.5); margin-bottom: 16px; }
+    .product-card .pc-cost strong { color: #0a0a0a; font-weight: 700; }
+    .pc-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .pc-input-row { display: flex; align-items: center; gap: 8px; }
+    .pc-input-row label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(0,0,0,0.45); flex: 1; }
+    .pc-input-row .price-input { width: 80px; }
+    .pc-result { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+    .pc-result-label { font-size: 12px; color: rgba(0,0,0,0.45); }
+    .pc-margin { font-family: 'Cooper Black', serif; font-size: 22px; font-weight: 400; color: #0a0a0a; }
+
+    /* ── SUBSECTION DIVIDER ── */
+    .subsection { margin-bottom: 32px; }
+    .subsection-header {
+      padding: 14px 0 12px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #0a0a0a;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .subsection-header h3 { font-family: 'Cooper Black', serif; font-size: 20px; font-weight: 400; color: #0a0a0a; }
+    .subsection-header span { font-size: 12px; color: rgba(0,0,0,0.4); }
+
+    /* ── SUMMARY STRIP ── */
+    .summary-strip {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #0a0a0a;
+      color: white;
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      z-index: 200;
+      flex-wrap: wrap;
+      transform: translateY(calc(100% - 6px));
+      transition: transform 0.2s ease;
+    }
+    .summary-strip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #333;
+      cursor: ns-resize;
+    }
+    .summary-strip:hover {
+      transform: translateY(0);
+    }
+    .summary-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-value { font-family: 'Cooper Black', serif; font-size: 18px; font-weight: 400; color: white; }
+    .summary-value.green { color: #4ade80; }
+    .summary-value.yellow { color: #fbbf24; }
+    .summary-value.red { color: #f87171; }
+    .summary-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.15); }
+    .summary-note { font-size: 11px; color: rgba(255,255,255,0.35); margin-left: auto; }
+
+    /* ── GLOBAL SETTINGS PANEL ── */
+    .settings-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 32px;
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+    }
+    .atomic-section {
+      background: #0a0a0a;
+      padding: 24px 28px;
+    }
+    .distributor-section {
+      background: #fffbf0;
+      border-left: 3px solid #d97706;
+      padding: 24px 28px;
+    }
+    .sp-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .atomic-section .sp-eyebrow { color: rgba(255,255,255,0.4); }
+    .distributor-section .sp-eyebrow { color: #d97706; }
+    .sp-title {
+      font-family: 'Cooper Black', serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+    .atomic-section .sp-title { color: white; }
+    .distributor-section .sp-title { color: #0a0a0a; }
+    .sp-desc {
+      font-size: 12px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .atomic-section .sp-desc { color: rgba(255,255,255,0.45); }
+    .distributor-section .sp-desc { color: rgba(0,0,0,0.45); }
+    .sp-fields { display: flex; flex-direction: column; gap: 14px; }
+    .sp-field label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .atomic-section .sp-field label { color: rgba(255,255,255,0.5); }
+    .distributor-section .sp-field label { color: rgba(0,0,0,0.5); }
+    .sp-note-small { font-size: 11px; margin-top: 4px; }
+    .atomic-section .sp-note-small { color: rgba(255,255,255,0.35); }
+    .distributor-section .sp-note-small { color: rgba(0,0,0,0.35); }
+    .atomic-section select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      color: white;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+    }
+    .atomic-section select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+    .atomic-section select option, .atomic-section select optgroup { background: #1a1a1a; color: white; }
+    .atomic-input {
+      padding: 7px 10px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      width: 80px;
+    }
+    .atomic-input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+    .dist-input-row { display: flex; align-items: center; gap: 0; }
+    .dist-symbol {
+      padding: 7px 10px;
+      background: #f5edd8;
+      border: 1px solid #d0ccc0;
+      border-right: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.45);
+      white-space: nowrap;
+    }
+    .dist-input {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid #d0ccc0;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      color: #0a0a0a;
+      background: white;
+      min-width: 0;
+    }
+    .dist-input:focus { outline: none; border-color: #d97706; }
+    .dist-unit {
+      padding: 7px 10px;
+      background: #f5edd8;
+      border: 1px solid #d0ccc0;
+      border-left: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.45);
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      .settings-panel { grid-template-columns: 1fr; }
+      .distributor-section { border-left: none; border-top: 3px solid #d97706; }
+    }
+
+    /* ── RETAIL BLEND BADGE ── */
+    .roast-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .roast-light { background: #F5C518; }
+    .roast-medium { background: #20B2AA; }
+    .roast-dark { background: #4A3728; }
+
+    /* ── PRINT ── */
+    @media print {
+      .announcement, nav, .tab-nav, .summary-strip { display: none !important; }
+      .tab-panel { display: block !important; }
+      .page-break { page-break-before: always; }
+      body { background: white; }
+      .card { border: 1px solid #ccc; break-inside: avoid; }
+    }
+
+    @media (max-width: 640px) {
+      main { padding: 20px 16px 80px; }
+      .config-grid { grid-template-columns: 1fr 1fr; }
+      .product-grid { grid-template-columns: 1fr; }
+      th, td { padding: 10px 12px; }
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="announcement">Confidential — For Atomic Coffee Wholesale Partners Only &nbsp;·&nbsp; June 2026 Pricing</div>
+
+<nav>
+  <span class="nav-brand">Atomic Coffee Roasters</span>
+  <div style="display:flex;align-items:center;gap:16px">
+    <select id="account-select" onchange="selectAccount(parseInt(this.value))">
+      <!-- filled by JS -->
+    </select>
+    <span class="nav-sub">Cost of Goods Calculator</span>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <h1>Cost of Goods Calculator</h1>
+    <p>Select your Atomic products and enter your distributor costs below, then use each tab to see your cost per serving and gross margin.</p>
+  </div>
+
+  <!-- GLOBAL SETTINGS PANEL -->
+  <div class="settings-panel">
+
+    <div class="atomic-section">
+      <div class="sp-eyebrow">June 2026 Wholesale Price List</div>
+      <div class="sp-title">Atomic Products</div>
+      <div class="sp-desc">Pre-priced from our current price list — select the products you carry. Cold brew, tea &amp; specialty are pre-loaded per product in their tabs.</div>
+      <div class="sp-fields">
+
+        <div class="sp-field">
+          <label>Espresso &amp; Milk Drinks — Blend</label>
+          <select id="g-esp-blend" onchange="recalcAll()">
+            <option value="" disabled>— select blend —</option>
+            <optgroup label="Blends — Light">
+              <option value="56.50">Moonwalk ($56.50 / 5lb)</option>
+              <option value="54.00">Space Cadet ($54.00 / 5lb)</option>
+            </optgroup>
+            <optgroup label="Blends — Medium">
+              <option value="54.00">Cosmo ($54.00 / 5lb)</option>
+              <option value="54.00" selected>House ($54.00 / 5lb)</option>
+              <option value="54.00">Rocketeer ($54.00 / 5lb)</option>
+              <option value="56.50">Daydream Decaf ($56.50 / 5lb)</option>
+            </optgroup>
+            <optgroup label="Blends — Dark">
+              <option value="54.00">Intensi ($54.00 / 5lb)</option>
+              <option value="54.00">Black Velvet ($54.00 / 5lb)</option>
+              <option value="56.50">Diesel ($56.50 / 5lb)</option>
+            </optgroup>
+            <optgroup label="Single Origin">
+              <option value="59.00">Ethiopia Kochere ($59.00 / 5lb)</option>
+              <option value="59.00">Colombia Huila ($59.00 / 5lb)</option>
+              <option value="59.00">Costa Rica Tarrazu ($59.00 / 5lb)</option>
+            </optgroup>
+            <optgroup label="Limited Release">
+              <option value="69.00">Burundi Ngozi ($69.00 / 5lb)</option>
+              <option value="69.00">Burundi Rimiro ($69.00 / 5lb)</option>
+              <option value="67.00">Honduras Manos de Mujer ($67.00 / 5lb)</option>
+              <option value="63.00">Single Track ($63.00 / 5lb)</option>
+            </optgroup>
+          </select>
+          <div class="sp-note-small" id="g-esp-blend-note">$0.86 per double shot · 63 double shots per 5lb bag</div>
+        </div>
+
+<div class="sp-field">
+          <label>Espresso Dose</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input class="atomic-input" id="g-dose" type="number" value="18" min="14" max="24" step="0.5" oninput="recalcAll()">
+            <span style="font-size:12px;color:rgba(255,255,255,0.45)">grams per single shot</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="distributor-section">
+      <div class="sp-eyebrow">Not Carried by Atomic</div>
+      <div class="sp-title">Your Distributor Costs</div>
+      <div class="sp-desc">These items vary by local supplier — enter what you pay so your margins calculate correctly.</div>
+      <div class="sp-fields">
+
+        <div class="sp-field">
+          <label>Dairy Milk</label>
+          <div class="dist-input-row">
+            <span class="dist-symbol">$</span>
+            <input class="dist-input" type="number" id="g-milk" value="6.00" min="0" step="0.25" oninput="recalcAll()">
+            <span class="dist-unit">per gallon (128 oz)</span>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <label>Non-Dairy Milk (Oat, Almond, etc.)</label>
+          <div class="dist-input-row">
+            <span class="dist-symbol">$</span>
+            <input class="dist-input" type="number" id="g-nondairy" value="9.00" min="0" step="0.25" oninput="recalcAll()">
+            <span class="dist-unit">per quart (32 oz)</span>
+          </div>
+          <div class="sp-note-small">Used as alternate milk in margin calculations</div>
+        </div>
+
+        <div class="sp-field">
+          <label>Cups &amp; Lids</label>
+          <div class="dist-input-row">
+            <span class="dist-symbol">$</span>
+            <input class="dist-input" type="number" id="g-cups" value="45.00" min="0" step="1" oninput="recalcAll()">
+            <span class="dist-unit">per case of 500</span>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <label>Flavored Syrup</label>
+          <div class="dist-input-row">
+            <span class="dist-symbol">$</span>
+            <input class="dist-input" type="number" id="g-syrup" value="8.00" min="0" step="0.50" oninput="recalcAll()">
+            <span class="dist-unit">/ 750ml bottle</span>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <label>Drip Brew Ratio</label>
+          <div class="dist-input-row">
+            <input class="dist-input" type="number" id="g-brew-ratio" value="215" min="150" max="300" step="5" oninput="recalcAll()">
+            <span class="dist-unit">g coffee per gallon (Fetco default: 215g)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /settings-panel -->
+
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-btn-espresso" onclick="switchTab('espresso')">Espresso &amp; Milk</button>
+    <button class="tab-btn" id="tab-btn-drip" onclick="switchTab('drip')">Drip Coffee</button>
+    <button class="tab-btn" id="tab-btn-coldbrew" onclick="switchTab('coldbrew')">Cold Brew &amp; Kegs</button>
+    <button class="tab-btn" id="tab-btn-tea" onclick="switchTab('tea')">Tea &amp; Specialty</button>
+    <button class="tab-btn" id="tab-btn-retail" onclick="switchTab('retail')">Retail Bags</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       TAB 1: ESPRESSO & MILK
+  ══════════════════════════════════════════════════ -->
+  <div id="tab-espresso" class="tab-panel active">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Espresso &amp; Milk Drinks</span>
+        <span class="card-hint">Enter your menu price to see margin</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:200px">Drink</th>
+            <th class="center">Size</th>
+            <th class="center">Shots</th>
+            <th class="center">Milk</th>
+            <th class="center">Menu Price</th>
+            <th class="right">Cost / Drink</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="esp-rows">
+          <!-- filled by JS -->
+        </tbody>
+        <tfoot>
+          <tr class="avg-row" id="esp-avg">
+            <td colspan="4">Average (priced items)</td>
+            <td class="right" id="esp-avg-price">—</td>
+            <td class="right" id="esp-avg-cost">—</td>
+            <td class="center" id="esp-avg-margin">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Cost Breakdown Reference</span>
+        <span class="card-hint">Updates with your blend &amp; dose selection</span>
+      </div>
+      <div class="card-body">
+        <div class="config-grid" style="gap:8px">
+          <div class="config-item">
+            <label>Cost / Double Shot</label>
+            <div style="font-size:22px;font-family:'Cooper Black',serif;color:#0a0a0a" id="ref-shot">—</div>
+          </div>
+          <div class="config-item">
+            <label>Shots / 5lb Bag</label>
+            <div style="font-size:22px;font-family:'Cooper Black',serif;color:#0a0a0a" id="ref-shots-bag">—</div>
+          </div>
+          <div class="config-item">
+            <label>Cost / oz Milk</label>
+            <div style="font-size:22px;font-family:'Cooper Black',serif;color:#0a0a0a" id="ref-milk-oz">—</div>
+          </div>
+          <div class="config-item">
+            <label>Cost / Cup</label>
+            <div style="font-size:22px;font-family:'Cooper Black',serif;color:#0a0a0a" id="ref-cup">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-espresso -->
+
+
+  <!-- ══════════════════════════════════════════════════
+       TAB 2: DRIP COFFEE
+  ══════════════════════════════════════════════════ -->
+  <div id="tab-drip" class="tab-panel">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Batch Brewed &amp; Drip</span>
+        <span class="card-hint">Select a blend per row · Enter your menu price to see margin</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:260px">Blend</th>
+            <th class="center">Cup Size</th>
+            <th class="center">Cups / 5lb</th>
+            <th class="center">Menu Price</th>
+            <th class="right">Cost / Cup</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="drip-rows"></tbody>
+        <tfoot>
+          <tr class="avg-row">
+            <td colspan="3">Average (priced items)</td>
+            <td class="center" id="drip-avg-price">—</td>
+            <td class="right" id="drip-avg-cost">—</td>
+            <td class="center" id="drip-avg-margin">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+  </div><!-- /tab-drip -->
+
+
+  <!-- ══════════════════════════════════════════════════
+       TAB 3: COLD BREW & KOMBUCHA
+  ══════════════════════════════════════════════════ -->
+  <div id="tab-coldbrew" class="tab-panel">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Cold Brew &amp; Kombucha Kegs</span>
+        <span class="card-hint">Select cup size · Enter your menu price to see margin</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:260px">Product</th>
+            <th class="center">Cup Size</th>
+            <th class="center">Servings / Vessel</th>
+            <th class="center">Menu Price</th>
+            <th class="right">Cost / Serving</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="keg-rows"></tbody>
+        <tfoot>
+          <tr class="avg-row">
+            <td colspan="3">Average (priced items)</td>
+            <td class="center" id="keg-avg-price">—</td>
+            <td class="right" id="keg-avg-cost">—</td>
+            <td class="center" id="keg-avg-margin">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+  </div><!-- /tab-coldbrew -->
+
+
+  <!-- ══════════════════════════════════════════════════
+       TAB 4: TEA & SPECIALTY
+  ══════════════════════════════════════════════════ -->
+  <div id="tab-tea" class="tab-panel">
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <span class="card-title">Hot Teas</span>
+        <span class="card-hint">Smith Tea · Matcha · Chai</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:240px">Product</th>
+            <th class="center" style="width:130px">Cup Size</th>
+            <th class="center">Menu Price</th>
+            <th class="right">Cost / Serving</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="hot-tea-grid"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Iced Teas</span>
+        <span class="card-hint">Smith Tea · Matcha · Chai</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:240px">Product</th>
+            <th class="center" style="width:130px">Cup Size</th>
+            <th class="center">Menu Price</th>
+            <th class="right">Cost / Serving</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="iced-tea-grid"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-tea -->
+
+
+  <!-- ══════════════════════════════════════════════════
+       TAB 5: RETAIL BAGS
+  ══════════════════════════════════════════════════ -->
+  <div id="tab-retail" class="tab-panel">
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-body" style="padding:14px 24px">
+        <p style="font-size:13px;color:rgba(0,0,0,0.5);line-height:1.6;">
+          Wholesale costs below are per retail bag (6–12 oz) when ordering by the case (6 bags/case). Enter your retail price to see margin versus MSRP.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Coffee Blends</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Blend</th>
+            <th class="center">Roast</th>
+            <th class="right">Wholesale Cost <span style="font-size:10px;font-weight:400;opacity:0.55">(per bag · 6/case)</span></th>
+            <th class="right">MSRP</th>
+            <th class="center">Menu Price</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="retail-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card" id="retail-cb-cans-card" style="margin-top:24px">
+      <div class="card-header">
+        <span class="card-title">Cold Brew Cans</span>
+        <span class="card-hint">$33 / case · 12 × 12oz cans</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Product</th>
+          <th class="right">Wholesale Cost</th>
+          <th class="right">MSRP</th>
+          <th class="center">Menu Price / Can</th>
+          <th class="center">Margin</th>
+        </tr></thead>
+        <tbody id="cold-brew-can-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card" id="retail-kombucha-cans-card" style="margin-top:24px">
+      <div class="card-header">
+        <span class="card-title">Kombucha Cans</span>
+        <span class="card-hint">$25 / case · 12 × 12oz cans · Pigeon Cove</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Product</th>
+          <th class="right">Wholesale Cost</th>
+          <th class="right">MSRP</th>
+          <th class="center">Menu Price / Can</th>
+          <th class="center">Margin</th>
+        </tr></thead>
+        <tbody id="kombucha-can-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header"><span class="card-title">Smith Tea</span><span class="card-hint">Retail boxes · 15 sachets / box</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="right">Wholesale Cost <span style="font-size:10px;font-weight:400;opacity:0.55">(per box · 6 boxes/case)</span></th>
+            <th class="right">MSRP</th>
+            <th class="center">Menu Price</th>
+            <th class="center">Margin</th>
+          </tr>
+        </thead>
+        <tbody id="retail-tea-rows"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /tab-retail -->
+
+</main>
+
+<!-- Summary Strip -->
+<div class="summary-strip" id="summary-strip">
+  <div class="summary-item">
+    <div class="summary-label">Espresso &amp; Milk</div>
+    <div class="summary-value" id="sum-espresso">—</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-item">
+    <div class="summary-label">Drip Coffee</div>
+    <div class="summary-value" id="sum-drip">—</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-item">
+    <div class="summary-label">On-Tap / Kegs</div>
+    <div class="summary-value" id="sum-cb">—</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-item">
+    <div class="summary-label">Tea &amp; Specialty</div>
+    <div class="summary-value" id="sum-tea">—</div>
+  </div>
+  <div class="summary-divider"></div>
+  <div class="summary-item">
+    <div class="summary-label">Retail</div>
+    <div class="summary-value" id="sum-retail">—</div>
+  </div>
+  <div class="summary-note">Gross margin on Atomic product cost only · does not include labor, overhead, or other COGS</div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+
+const BLENDS = [
+  { name:'Moonwalk',            roast:'Light',  type:'blend',  p5:56.50, p2:23.80, pBag:9.42,  msrp:16 },
+  { name:'Space Cadet',         roast:'Light',  type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:16 },
+  { name:'Cosmo',               roast:'Medium', type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:15 },
+  { name:'House',               roast:'Medium', type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:15 },
+  { name:'Rocketeer',           roast:'Medium', type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:15 },
+  { name:'Daydream Decaf',      roast:'Medium', type:'blend',  p5:56.50, p2:23.80, pBag:9.42,  msrp:16 },
+  { name:'Intensi',             roast:'Dark',   type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:15 },
+  { name:'Black Velvet',        roast:'Dark',   type:'blend',  p5:54.00, p2:22.80, pBag:9.00,  msrp:15 },
+  { name:'Diesel',              roast:'Dark',   type:'blend',  p5:56.50, p2:23.80, pBag:9.42,  msrp:16 },
+  { name:'Ethiopia Kochere',    roast:'Light',  type:'single', p5:59.00, p2:24.80, pBag:9.83,  msrp:17 },
+  { name:'Colombia Huila',      roast:'Light',  type:'single', p5:59.00, p2:24.80, pBag:9.83,  msrp:17 },
+  { name:'Costa Rica Tarrazu',  roast:'Medium', type:'single', p5:59.00, p2:24.80, pBag:9.83,  msrp:17 },
+  { name:'Burundi Ngozi',            roast:'Light',  type:'limited',p5:69.00, p2:29.00, pBag:11.50, msrp:20 },
+  { name:'Burundi Rimiro',           roast:'Light',  type:'limited',p5:69.00, p2:29.00, pBag:11.50, msrp:20 },
+  { name:'Honduras Manos de Mujer',  roast:'Light',  type:'limited',p5:67.00, p2:28.00, pBag:11.16, msrp:20 },
+  { name:'Single Track',             roast:'Medium', type:'limited',p5:63.00, p2:23.00, pBag:10.50, msrp:20 },
+];
+
+const ESP_DRINKS = [
+  { name:'Espresso',          detail:'Double shot, no milk',                         shots:2, milkOz:0,   size:'2 oz',  msrp:3.50 },
+  { name:'Macchiato / Cortado',detail:'Double shot, splash of milk',                 shots:2, milkOz:1,   size:'3 oz',  msrp:4.25 },
+  { name:'Americano',         detail:'Double shot, hot water',                        shots:2, milkOz:0,   size:'12 oz', msrp:3.75 },
+  { name:'Cappuccino',        detail:'Double shot, 4 oz steamed milk',               shots:2, milkOz:4,   size:'6 oz',  msrp:4.75 },
+  { name:'Latte',             detail:'Double shot, 10 oz steamed milk',              shots:2, milkOz:10,  size:'12 oz', msrp:5.25 },
+  { name:'Mocha',             detail:'Double shot, 10 oz milk + 1 oz syrup',         shots:2, milkOz:10,  size:'12 oz', syrup:0.75, msrp:5.75 },
+  { name:'Seasonal / Specialty',detail:'Double shot, 10 oz milk + 1 oz syrup',      shots:2, milkOz:10,  size:'12 oz', syrup:0.75, msrp:6.00 },
+];
+
+// ── Update this each month ───────────────────────────────────
+const COFFEE_OF_THE_MONTH = 'Honduras Manos de Mujer';
+
+const DRIP_SIZES = [
+  { label:'Light Roast · Hot drip',     cat:'light',    sizeType:'hot',  defaultOz:12, msrp:3.25, defaultBlend:'Colombia Huila' },
+  { label:'Medium Roast · Hot drip',    cat:'medium',   sizeType:'hot',  defaultOz:12, msrp:3.00, defaultBlend:'Costa Rica Tarrazu' },
+  { label:'Dark Roast · Hot drip',      cat:'dark',     sizeType:'hot',  defaultOz:12, msrp:3.00, defaultBlend:'Black Velvet' },
+  { label:'Featured Coffee · Hot drip', cat:'featured', sizeType:'hot',  defaultOz:12, msrp:3.50, defaultBlend:COFFEE_OF_THE_MONTH },
+  { label:'Decaf Coffee · Hot drip',    cat:'decaf',    sizeType:'hot',  defaultOz:12, msrp:3.00, defaultBlend:'Daydream Decaf' },
+  { label:'Iced Coffee · Over ice',     cat:'',         sizeType:'iced', defaultOz:12, msrp:4.00, defaultBlend:'House' },
+];
+
+const CANS = [
+  { cat:'Cold Brew', name:'The Original',  detail:'Medium roast · House Blend',              casePrice:33, cans:12, msrp:4 },
+  { cat:'Cold Brew', name:'The Nitro',     detail:'Dark roast · nitrogen-infused',            casePrice:33, cans:12, msrp:4 },
+  { cat:'Cold Brew', name:'The Decaf',     detail:'Daydream Decaf blend',                     casePrice:33, cans:12, msrp:4 },
+  { cat:'Cold Brew', name:'Single Track',  detail:'NEMBA benefit · $2/bag donated',           casePrice:33, cans:12, msrp:4 },
+  { cat:'Kombucha',  name:'Hibiscus Ginger',       detail:'Floral & spicy · Pigeon Cove',     casePrice:25, cans:12, msrp:null },
+  { cat:'Kombucha',  name:'Raspberry Basil',        detail:'Fruity & herbaceous · Pigeon Cove',casePrice:25, cans:12, msrp:null },
+  { cat:'Kombucha',  name:'Blueberry Cinnamon',     detail:'Wild Maine blueberries · Pigeon Cove', casePrice:25, cans:12, msrp:null },
+  { cat:'Kombucha',  name:'Jasmine Lavender',       detail:'Fragrant & floral · Pigeon Cove', casePrice:25, cans:12, msrp:null },
+  { cat:'Kombucha',  name:'Pineapple Chamomile',    detail:'Sweet & easy drinking · Pigeon Cove', casePrice:25, cans:12, msrp:null },
+];
+
+const KEGS = [
+  { cat:'Cold Brew', name:'The Original Cold Brew', detail:'5 gallon keg · medium roast', price:100, gallons:5, defaultOz:16, msrp:5.00, note:'Medium roast cold brew made with our House Blend.' },
+  { cat:'Cold Brew', name:'The Nitro Cold Brew',    detail:'5 gallon keg · dark roast',   price:100, gallons:5, defaultOz:16, msrp:5.00, note:'Dark roast cold brew with nitrogen for creamy finish.' },
+  { cat:'Cold Brew', name:'4:1 Concentrate',        detail:'2 × 1-gal BIBs → 10 gal RTD',price:120, gallons:10, defaultOz:16, msrp:5.00, note:'Add water 4:1 to yield 10 gallons ready-to-drink cold brew.' },
+  { cat:'Kombucha',  name:'Hibiscus Ginger',        detail:'5 gallon keg · recyclable',    price:110, gallons:5, defaultOz:16, msrp:5.00, note:'Organic hibiscus flowers & organic ginger.' },
+  { cat:'Kombucha',  name:'Raspberry Basil',        detail:'5 gallon keg · recyclable',    price:110, gallons:5, defaultOz:16, msrp:5.00, note:'Perfect balance of fruity and herbaceous.' },
+  { cat:'Kombucha',  name:'Pineapple Chamomile',    detail:'5 gallon keg · recyclable',    price:110, gallons:5, defaultOz:16, msrp:5.00, note:'Organic pineapple & organic Egyptian chamomile.' },
+];
+
+const TEA_PRODUCTS = [
+  { cat:'Smith Tea', name:'Hot Tea',    detail:'100 sachets / case · whole-leaf',   unit:'per sachet', costEa: 45/100, inputLabel:'Menu price / cup', defaultPrice:3.50, milkOz:0 },
+  { cat:'Smith Tea', name:'Iced Tea',   detail:'50 sachets / case · each makes 1 gallon', unit:'per sachet → 128 oz', costEa: 50/50, inputLabel:'Menu price / 16 oz', defaultPrice:3.50, isIced:true, serveOz:16 },
+  { cat:'Smith Tea', name:'Retail Box', detail:'6 cartons × 15 sachets / case',    unit:'per sachet', costEa: 45/90,  inputLabel:'Menu price / box (15 ct)', defaultPrice:14.00, isRetailBox:true, sachetsPerBox:15 },
+];
+
+const MATCHA_PRODUCTS = [
+  { cat:'Matcha', name:'Barista Matcha', sizeType:'hot',  detail:'Smith Teamaker · 3 lb bag · sweetened blend', recipe:'1 tbsp · 2oz water + milk',       price:140, weightG:1361, servingG:15, defaultCupOz:12, defaultPrice:6.00 },
+  { cat:'Matcha', name:'Barista Matcha', sizeType:'iced', detail:'Smith Teamaker · 3 lb bag · sweetened blend', recipe:'1 tbsp · 2oz water + milk over ice', price:140, weightG:1361, servingG:15, defaultCupOz:16, defaultPrice:6.50 },
+  { cat:'Matcha', name:'Premium Matcha', sizeType:'hot',  detail:'Smith Teamaker · 12 × 40g tins / case',       recipe:'1 tsp · 2oz water + milk',         price:180, weightG:480,  servingG:2,  defaultCupOz:12, defaultPrice:7.00 },
+  { cat:'Matcha', name:'Premium Matcha', sizeType:'iced', detail:'Smith Teamaker · 12 × 40g tins / case',       recipe:'1 tsp · 2oz water + milk over ice',  price:180, weightG:480,  servingG:2,  defaultCupOz:16, defaultPrice:7.50 },
+];
+
+const CHAI = [
+  { cat:'Chai', name:'Minor Figures Chai', detail:'6 × 1-liter tetra paks / case · 3:1 concentrate', price:70, totalMl:6000, concentrateMlPerServe:89, serveLabel:'3 oz chai → 12 oz drink', inputLabel:'Menu price / 12 oz', defaultPrice:5.50, milkOz:9 },
+];
+
+
+// ── HELPERS ──────────────────────────────────────────────────
+
+function fmt(n) { return n == null ? '—' : '$' + n.toFixed(2); }
+function pct(n) { return n == null ? '—' : Math.round(n * 100) + '%'; }
+
+function marginBadge(m) {
+  if (m == null || isNaN(m)) return '<span class="badge badge-gray">—</span>';
+  if (m >= 0.65) return `<span class="badge badge-green">${pct(m)}</span>`;
+  if (m >= 0.45) return `<span class="badge badge-yellow">${pct(m)}</span>`;
+  return `<span class="badge badge-red">${pct(m)}</span>`;
+}
+
+function marginColor(m) {
+  if (m == null || isNaN(m) || m === 0) return '';
+  if (m >= 0.65) return 'green';
+  if (m >= 0.45) return 'yellow';
+  return 'red';
+}
+
+function priceInput(id, defaultVal, onInput) {
+  return `<div class="price-wrap"><span class="price-symbol">$</span><input class="price-input" type="number" id="${id}" placeholder="0.00" min="0" step="0.25" value="${defaultVal || ''}" oninput="${onInput}"></div>`;
+}
+
+function calcMargin(price, cost) {
+  if (!price || price <= 0 || !cost || cost <= 0) return null;
+  return (price - cost) / price;
+}
+
+
+// ── TAB SWITCHING ────────────────────────────────────────────
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const ids = ['espresso','drip','coldbrew','tea','retail'];
+    b.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+
+// ── TAB 1: ESPRESSO ──────────────────────────────────────────
+
+function buildEspressoRows() {
+  const tbody = document.getElementById('esp-rows');
+  tbody.innerHTML = ESP_DRINKS.map((d, i) => `
+    <tr>
+      <td><div class="drink-name">${d.name}</div><div class="drink-detail">${d.detail}</div></td>
+      <td class="center">${d.size}</td>
+      <td class="center">${d.shots} shot${d.shots>1?'s':''}</td>
+      <td class="center">${d.milkOz > 0 ? d.milkOz + ' oz' : '—'}</td>
+      <td class="center">${priceInput('esp-price-' + i, d.msrp || '', 'recalcEspresso()')}</td>
+      <td class="right cost-value" id="esp-cost-${i}">—</td>
+      <td class="center" id="esp-margin-${i}">${marginBadge(null)}</td>
+    </tr>
+  `).join('');
+}
+
+function recalcAll() {
+  recalcEspresso();
+  recalcDrip();
+  buildTeaCards();
+  KEGS.forEach((_, i) => recalcKeg(i));
+}
+
+function recalcEspresso() {
+  const blendEl = document.getElementById('g-esp-blend');
+  const p5lb   = parseFloat(blendEl?.value) || 0;
+  const dose   = parseFloat(document.getElementById('g-dose').value) || 18;
+  const milkGal= parseFloat(document.getElementById('g-milk').value) || 6;
+  const cupCase= parseFloat(document.getElementById('g-cups').value) || 45;
+  const syrupBottle = parseFloat(document.getElementById('g-syrup').value) || 8.00;
+  const syrupOz = syrupBottle / (750 / 29.5735); // cost per oz (750ml ÷ 29.57ml/oz ≈ 25.36 oz/bottle)
+
+  const costPerG  = p5lb / 2268;
+  const shotCost  = dose * costPerG;
+  const milkOzCost= milkGal / 128;
+  const cupCost   = cupCase / 500;
+
+  // update reference panel
+  document.getElementById('ref-shot').textContent        = p5lb ? fmt(shotCost * 2) : '—';
+  document.getElementById('ref-shots-bag').textContent   = p5lb ? Math.floor(2268 / dose / 2) + ' dbl' : '—';
+  document.getElementById('ref-milk-oz').textContent     = fmt(milkOzCost);
+  document.getElementById('ref-cup').textContent         = fmt(cupCost);
+
+  const note = document.getElementById('g-esp-blend-note');
+  if (note) note.textContent = p5lb ? `${fmt(costPerG * 1000)} per 1000g · ${fmt(shotCost * 2)} per double shot` : '';
+
+  let totalPrice = 0, totalCost = 0, count = 0;
+
+  ESP_DRINKS.forEach((d, i) => {
+    const price = parseFloat(document.getElementById('esp-price-' + i).value);
+    const syrup = d.syrup ? syrupOz * d.syrup : 0; // d.syrup = oz per drink
+    const cost  = (shotCost * d.shots) + (milkOzCost * d.milkOz) + cupCost + syrup + 0.05;
+    const margin = calcMargin(price, cost);
+
+    document.getElementById('esp-cost-' + i).textContent = fmt(cost);
+    document.getElementById('esp-margin-' + i).innerHTML = price ? marginBadge(margin) : marginBadge(null);
+
+    if (price && price > 0) {
+      totalPrice += price;
+      totalCost  += cost;
+      count++;
+    }
+  });
+
+  const avgM = count ? calcMargin(totalPrice / count, totalCost / count) : null;
+  document.getElementById('esp-avg-price').textContent = count ? fmt(totalPrice / count) : '—';
+  document.getElementById('esp-avg-cost').textContent  = count ? fmt(totalCost  / count) : '—';
+  document.getElementById('esp-avg-margin').innerHTML  = count ? marginBadge(avgM) : '—';
+
+  updateSummary('sum-espresso', avgM);
+}
+
+
+// ── TAB 2: DRIP ──────────────────────────────────────────────
+
+function dripBlendSelect(id, defaultName, cat) {
+  let pool;
+  if (cat === 'light')    pool = BLENDS.filter(b => b.roast === 'Light' && (b.type === 'blend' || b.type === 'single'));
+  else if (cat === 'medium') pool = BLENDS.filter(b => b.roast === 'Medium' && (b.type === 'blend' || b.type === 'single'));
+  else if (cat === 'dark')   pool = BLENDS.filter(b => b.roast === 'Dark' && b.type === 'blend');
+  else if (cat === 'featured') pool = BLENDS.filter(b => b.type === 'single' || b.type === 'limited');
+  else if (cat === 'decaf')  pool = BLENDS.filter(b => b.name === 'Daydream Decaf');
+  else pool = BLENDS;
+  const opts = pool.map(b =>
+    `<option value="${b.name}" ${b.name === defaultName ? 'selected' : ''}>${b.name} (${fmt(b.p5)}/5lb)</option>`
+  ).join('');
+  return `<select id="${id}" onchange="recalcDrip()" style="width:100%;padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;">
+    <option value="" ${defaultName ? '' : 'selected'} disabled>— select blend —</option>
+    ${opts}
+  </select>`;
+}
+
+function dripSizeSelect(id, sizeType, defaultOz) {
+  const sel = `style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;width:100%"`;
+  if (sizeType === 'hot') return `<select id="${id}" onchange="recalcDrip()" ${sel}>
+    <option value="12" ${defaultOz===12?'selected':''}>12 oz</option>
+    <option value="16" ${defaultOz===16?'selected':''}>16 oz</option>
+  </select>`;
+  return `<select id="${id}" onchange="recalcDrip()" ${sel}>
+    <option value="12" ${defaultOz===12?'selected':''}>16 oz cup</option>
+    <option value="16" ${defaultOz===16?'selected':''}>20 oz cup</option>
+  </select>`;
+}
+
+function buildDripRows() {
+  const tbody = document.getElementById('drip-rows');
+  tbody.innerHTML = DRIP_SIZES.map((d, i) => `
+    <tr>
+      <td>
+        ${dripBlendSelect('drip-blend-' + i, d.defaultBlend, d.cat)}
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">${d.label}</div>
+      </td>
+      <td class="center">${dripSizeSelect('drip-size-' + i, d.sizeType, d.defaultOz)}</td>
+      <td class="center" id="drip-yield-${i}">—</td>
+      <td class="center">${priceInput('drip-price-' + i, d.msrp || '', 'recalcDrip()')}</td>
+      <td class="right cost-value" id="drip-cost-${i}">—</td>
+      <td class="center" id="drip-margin-${i}">${marginBadge(null)}</td>
+    </tr>
+  `).join('');
+}
+
+function recalcDrip() {
+  const ratio  = parseFloat(document.getElementById('g-brew-ratio').value) || 215;
+  const cupCase= parseFloat(document.getElementById('g-cups').value) || 45;
+
+  const gallonsPerBag = 2268 / ratio;
+  const ozPerBag      = gallonsPerBag * 128;
+  const cupCost       = cupCase / 500;
+
+  let totalPrice = 0, totalCost = 0, count = 0;
+
+  DRIP_SIZES.forEach((d, i) => {
+    const blendName = document.getElementById('drip-blend-' + i)?.value || '';
+    const blendData = BLENDS.find(b => b.name === blendName);
+    const p5lb = blendData ? blendData.p5 : 0;
+    const liquidOz = parseFloat(document.getElementById('drip-size-' + i)?.value) || d.defaultOz;
+    const cupsPerBag = ozPerBag / liquidOz;
+    const coffeeCostPerCup = p5lb ? p5lb / cupsPerBag : 0;
+    const totalCostPerCup  = coffeeCostPerCup + cupCost;
+    const price = parseFloat(document.getElementById('drip-price-' + i).value);
+    const margin = calcMargin(price, totalCostPerCup);
+
+    document.getElementById('drip-yield-' + i).textContent = p5lb ? Math.round(cupsPerBag) + ` (${liquidOz}oz)` : '—';
+    document.getElementById('drip-cost-' + i).textContent  = p5lb ? fmt(totalCostPerCup) : '—';
+    document.getElementById('drip-margin-' + i).innerHTML  = (price && p5lb) ? marginBadge(margin) : marginBadge(null);
+
+    if (price && price > 0 && p5lb) {
+      totalPrice += price;
+      totalCost  += totalCostPerCup;
+      count++;
+    }
+  });
+
+  const avgM = count ? calcMargin(totalPrice / count, totalCost / count) : null;
+  document.getElementById('drip-avg-price').textContent = count ? fmt(totalPrice / count) : '—';
+  document.getElementById('drip-avg-cost').textContent  = count ? fmt(totalCost  / count) : '—';
+  document.getElementById('drip-avg-margin').innerHTML  = count ? marginBadge(avgM) : '—';
+
+  updateSummary('sum-drip', avgM);
+}
+
+
+// ── TAB 3: COLD BREW ─────────────────────────────────────────
+
+function buildCanCards() {
+  const coldBrewCans = CANS.filter(c => c.cat === 'Cold Brew');
+  const kombuchaCans = CANS.filter(c => c.cat === 'Kombucha');
+
+  function canRow(c, i) {
+    const costPer = c.casePrice / c.cans;
+    return `<tr>
+      <td><div class="drink-name">${c.name}</div><div class="drink-detail">${c.detail}</div></td>
+      <td class="right cost-value">${fmt(costPer)} <span style="font-size:11px;color:rgba(0,0,0,0.35)">/ can</span></td>
+      <td class="right">${c.msrp ? '$' + c.msrp : '<span style="color:rgba(0,0,0,0.3)">—</span>'}</td>
+      <td class="center">${priceInput('can-price-' + i, c.msrp || '', `recalcCan(${i})`)}</td>
+      <td class="center" id="can-margin-${i}">${marginBadge(null)}</td>
+    </tr>`;
+  }
+
+  document.getElementById('cold-brew-can-rows').innerHTML =
+    coldBrewCans.map((c) => canRow(c, CANS.indexOf(c))).join('');
+
+  document.getElementById('kombucha-can-rows').innerHTML =
+    kombuchaCans.map((c) => canRow(c, CANS.indexOf(c))).join('');
+
+  CANS.forEach((_, i) => recalcCan(i));
+}
+
+function recalcCan(i) {
+  const c = CANS[i];
+  const costPer = c.casePrice / c.cans;
+  const price = parseFloat(document.getElementById('can-price-' + i)?.value);
+  const mEl = document.getElementById('can-margin-' + i);
+  if (mEl) mEl.innerHTML = marginBadge(price > 0 ? calcMargin(price, costPer) : null);
+  recalcRetailSummary();
+}
+
+function buildKegCards() {
+  const sel = `style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;width:90px"`;
+  document.getElementById('keg-rows').innerHTML = KEGS.map((k, i) => {
+    const ozTotal = k.gallons * 128;
+    return `
+    <tr id="keg-row-${i}">
+      <td>
+        <div class="drink-name">${k.name}</div>
+        <div class="drink-detail">${k.detail} &nbsp;·&nbsp; ${fmt(k.price)} / ${fmt(k.price / ozTotal)} per oz</div>
+      </td>
+      <td class="center">
+        <select id="keg-oz-${i}" onchange="recalcKeg(${i})" ${sel}>
+          <option value="16" ${k.defaultOz===16?'selected':''}>16 oz</option>
+          <option value="20" ${k.defaultOz===20?'selected':''}>20 oz</option>
+        </select>
+      </td>
+      <td class="center" id="keg-servings-${i}">—</td>
+      <td class="center">${priceInput('keg-price-' + i, k.msrp || '', `recalcKeg(${i})`)}</td>
+      <td class="right cost-value" id="keg-cost-${i}">—</td>
+      <td class="center" id="keg-margin-${i}">${marginBadge(null)}</td>
+    </tr>`;
+  }).join('');
+  KEGS.forEach((_, i) => recalcKeg(i));
+}
+
+function recalcKeg(i) {
+  const k = KEGS[i];
+  const ozTotal  = k.gallons * 128;
+  const cupOz    = parseFloat(document.getElementById('keg-oz-' + i).value) || 16;
+  const liquidOz = cupOz === 16 ? 12 : 16;
+  const cupCost  = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const price    = parseFloat(document.getElementById('keg-price-' + i).value);
+  const servings = Math.floor(ozTotal / liquidOz);
+  const costEa   = (k.price / ozTotal) * liquidOz + cupCost;
+  const m = calcMargin(price, costEa);
+
+  document.getElementById('keg-servings-' + i).textContent = servings;
+  document.getElementById('keg-cost-' + i).textContent = (price > 0) ? fmt(costEa) : '—';
+  const mEl = document.getElementById('keg-margin-' + i);
+  mEl.innerHTML = marginBadge(price > 0 ? m : null);
+  recalcCBSummary();
+}
+
+function recalcCBSummary() {
+  const cupCost = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const prices = [], costs = [], margins = [];
+  KEGS.forEach((k, i) => {
+    const ozTotal = k.gallons * 128;
+    const cupOz    = parseFloat(document.getElementById('keg-oz-' + i)?.value) || 16;
+    const liquidOz = cupOz === 16 ? 12 : 16;
+    const price    = parseFloat(document.getElementById('keg-price-' + i)?.value);
+    const costEa   = (k.price / ozTotal) * liquidOz + cupCost;
+    if (price > 0) { prices.push(price); costs.push(costEa); margins.push(calcMargin(price, costEa)); }
+  });
+  const avg = n => n.length ? n.reduce((a,b) => a+b, 0) / n.length : null;
+  const avgM = avg(margins);
+  document.getElementById('keg-avg-price').textContent  = prices.length  ? fmt(avg(prices))  : '—';
+  document.getElementById('keg-avg-cost').textContent   = costs.length   ? fmt(avg(costs))   : '—';
+  document.getElementById('keg-avg-margin').innerHTML   = marginBadge(avgM);
+  updateSummary('sum-cb', avgM);
+}
+
+
+// ── TAB 4: TEA ───────────────────────────────────────────────
+
+function buildTeaCards() {
+  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const sel = `style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;width:100%"`;
+
+  // ── HOT TEAS: Hot Tea, Hot Barista Matcha, Hot Premium Matcha, Chai ──
+  const hotTeaProduct = TEA_PRODUCTS[0]; // Hot Tea
+  const hotMatchaRows = MATCHA_PRODUCTS.filter(m => m.sizeType === 'hot');
+  const chaiRow = CHAI[0];
+
+  let hotRows = '';
+
+  // Hot Tea row
+  {
+    const t = hotTeaProduct;
+    const costEa = t.costEa;
+    hotRows += `<tr>
+      <td><div class="drink-name">${t.name}</div><div class="drink-detail">${t.detail}</div></td>
+      <td class="center" style="font-size:13px;color:rgba(0,0,0,0.55)">per cup</td>
+      <td class="center">${priceInput('tea-price-0', t.defaultPrice || '', 'recalcTea(0)')}</td>
+      <td class="right cost-value" id="tea-cost-0">${fmt(costEa)}</td>
+      <td class="center" id="tea-margin-0">${marginBadge(null)}</td>
+    </tr>`;
+  }
+
+  // Hot Matcha rows (indices 0 and 2 in MATCHA_PRODUCTS)
+  hotMatchaRows.forEach((m2) => {
+    const i = MATCHA_PRODUCTS.indexOf(m2);
+    const costPerG = m2.price / m2.weightG;
+    const liquidOz = m2.defaultCupOz;
+    const milkOz = liquidOz - 2;
+    const ingredientCost = (costPerG * m2.servingG) + (milkCostPerOz * milkOz) + cupCostGlobal;
+    const sizeSelect = `<select id="matcha-oz-${i}" onchange="recalcMatcha(${i})" ${sel}>
+      <option value="12" ${m2.defaultCupOz===12?'selected':''}>12 oz</option>
+      <option value="16" ${m2.defaultCupOz===16?'selected':''}>16 oz</option>
+    </select>`;
+    hotRows += `<tr>
+      <td>
+        <div class="drink-name">${m2.name}</div>
+        <div class="drink-detail">${m2.recipe}</div>
+      </td>
+      <td class="center">${sizeSelect}</td>
+      <td class="center">${priceInput('matcha-price-' + i, m2.defaultPrice || '', `recalcMatcha(${i})`)}</td>
+      <td class="right cost-value" id="matcha-cost-${i}">${fmt(ingredientCost)}</td>
+      <td class="center" id="matcha-margin-${i}">${marginBadge(null)}</td>
+    </tr>`;
+  });
+
+  // Chai row
+  {
+    const ch = chaiRow;
+    const defaultCupOz = 12;
+    const concentrateMl = (defaultCupOz / 4) * 29.5735;
+    const milkOz = defaultCupOz * 3 / 4;
+    const costPerMl = ch.price / ch.totalMl;
+    const ingredientCost = costPerMl * concentrateMl + milkCostPerOz * milkOz + cupCostGlobal;
+    const chaiSizeSelect = `<select id="chai-oz-0" onchange="recalcChai(0)" ${sel}>
+      <option value="12" selected>12 oz</option>
+      <option value="16">16 oz</option>
+    </select>`;
+    hotRows += `<tr>
+      <td><div class="drink-name">${ch.name}</div><div class="drink-detail">${ch.detail}</div></td>
+      <td class="center">${chaiSizeSelect}</td>
+      <td class="center">${priceInput('chai-price-0', ch.defaultPrice || '', 'recalcChai(0)')}</td>
+      <td class="right cost-value" id="chai-cost-0">${fmt(ingredientCost)}</td>
+      <td class="center" id="chai-margin-0">${marginBadge(null)}</td>
+    </tr>`;
+  }
+
+  document.getElementById('hot-tea-grid').innerHTML = hotRows;
+
+  // ── ICED TEAS: Iced Tea, Iced Barista Matcha, Iced Premium Matcha ──
+  const icedTeaProduct = TEA_PRODUCTS[1]; // Iced Tea
+  const icedMatchaRows = MATCHA_PRODUCTS.filter(m => m.sizeType === 'iced');
+
+  let icedRows = '';
+
+  // Iced Tea row (1 sachet → 1 gallon = 128oz; cost per liquid-oz serving)
+  {
+    const t = icedTeaProduct;
+    const liquidOz = 16; // default serve 16oz (from 20oz cup)
+    const costEa = (t.costEa / 128) * liquidOz;
+    const sizeSelect = `<select id="iced-tea-oz" onchange="recalcTea(1)" ${sel}>
+      <option value="16">16 oz cup</option>
+      <option value="20">20 oz cup</option>
+    </select>`;
+    icedRows += `<tr>
+      <td><div class="drink-name">${t.name}</div><div class="drink-detail">${t.detail}</div></td>
+      <td class="center">${sizeSelect}</td>
+      <td class="center">${priceInput('tea-price-1', t.defaultPrice || '', 'recalcTea(1)')}</td>
+      <td class="right cost-value" id="tea-cost-1">${fmt(costEa)}</td>
+      <td class="center" id="tea-margin-1">${marginBadge(null)}</td>
+    </tr>`;
+  }
+
+  // Iced Matcha rows (indices 1 and 3 in MATCHA_PRODUCTS)
+  icedMatchaRows.forEach((m2) => {
+    const i = MATCHA_PRODUCTS.indexOf(m2);
+    const costPerG = m2.price / m2.weightG;
+    const liquidOz = m2.defaultCupOz === 16 ? 12 : 16;
+    const milkOz = liquidOz - 2;
+    const ingredientCost = (costPerG * m2.servingG) + (milkCostPerOz * milkOz) + cupCostGlobal;
+    const sizeSelect = `<select id="matcha-oz-${i}" onchange="recalcMatcha(${i})" ${sel}>
+      <option value="16" ${m2.defaultCupOz===16?'selected':''}>16 oz cup</option>
+      <option value="20" ${m2.defaultCupOz===20?'selected':''}>20 oz cup</option>
+    </select>`;
+    icedRows += `<tr>
+      <td>
+        <div class="drink-name">${m2.name}</div>
+        <div class="drink-detail">${m2.recipe}</div>
+      </td>
+      <td class="center">${sizeSelect}</td>
+      <td class="center">${priceInput('matcha-price-' + i, m2.defaultPrice || '', `recalcMatcha(${i})`)}</td>
+      <td class="right cost-value" id="matcha-cost-${i}">${fmt(ingredientCost)}</td>
+      <td class="center" id="matcha-margin-${i}">${marginBadge(null)}</td>
+    </tr>`;
+  });
+
+  // Iced Chai row
+  {
+    const ch = CHAI[0];
+    const defaultCupOz = 16;
+    const liquidOz = 12; // 16oz cup → 12oz liquid
+    const concentrateMl = (liquidOz / 4) * 29.5735;
+    const milkOz = liquidOz * 3 / 4;
+    const costPerMl = ch.price / ch.totalMl;
+    const ingredientCost = costPerMl * concentrateMl + milkCostPerOz * milkOz + cupCostGlobal;
+    const icedChaiSizeSelect = `<select id="chai-iced-oz-0" onchange="recalcIcedChai(0)" ${sel}>
+      <option value="16" selected>16 oz cup</option>
+      <option value="20">20 oz cup</option>
+    </select>`;
+    icedRows += `<tr>
+      <td><div class="drink-name">${ch.name}</div><div class="drink-detail">${ch.detail}</div></td>
+      <td class="center">${icedChaiSizeSelect}</td>
+      <td class="center">${priceInput('chai-iced-price-0', 6.00, 'recalcIcedChai(0)')}</td>
+      <td class="right cost-value" id="chai-iced-cost-0">${fmt(ingredientCost)}</td>
+      <td class="center" id="chai-iced-margin-0">${marginBadge(null)}</td>
+    </tr>`;
+  }
+
+  document.getElementById('iced-tea-grid').innerHTML = icedRows;
+
+  recalcTea(0);
+  recalcTea(1);
+  MATCHA_PRODUCTS.forEach((_, i) => recalcMatcha(i));
+  CHAI.forEach((_, i) => recalcChai(i));
+  CHAI.forEach((_, i) => recalcIcedChai(i));
+}
+
+function recalcTea(i) {
+  const t = TEA_PRODUCTS[i];
+  const price = parseFloat(document.getElementById('tea-price-' + i)?.value);
+  let costEa = t.costEa;
+  if (t.isIced) {
+    const cupOz = parseFloat(document.getElementById('iced-tea-oz')?.value) || 16;
+    const liquidOz = cupOz === 16 ? 12 : 16;
+    costEa = (t.costEa / 128) * liquidOz;
+  }
+  if (t.isRetailBox) costEa = t.costEa * t.sachetsPerBox;
+  const costEl = document.getElementById('tea-cost-' + i);
+  const marginEl = document.getElementById('tea-margin-' + i);
+  if (costEl) costEl.textContent = fmt(costEa);
+  if (marginEl) marginEl.innerHTML = marginBadge(price > 0 ? calcMargin(price, costEa) : null);
+  recalcTeaSummary();
+}
+
+function recalcMatcha(i) {
+  const m2 = MATCHA_PRODUCTS[i];
+  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const cupOz = parseFloat(document.getElementById('matcha-oz-' + i)?.value) || m2.defaultCupOz;
+  const liquidOz = m2.sizeType === 'iced' ? (cupOz === 16 ? 12 : 16) : cupOz;
+  const milkOz = liquidOz - 2;
+  const costPerG = m2.price / m2.weightG;
+  const ingredientCost = (costPerG * m2.servingG) + (milkCostPerOz * milkOz) + cupCostGlobal;
+  const price = parseFloat(document.getElementById('matcha-price-' + i).value);
+  document.getElementById('matcha-cost-' + i).textContent = fmt(ingredientCost);
+  document.getElementById('matcha-margin-' + i).innerHTML = marginBadge(price > 0 ? calcMargin(price, ingredientCost) : null);
+  recalcTeaSummary();
+}
+
+function recalcChai(i) {
+  const ch = CHAI[i];
+  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const cupOz = parseFloat(document.getElementById('chai-oz-' + i)?.value) || 12;
+  // 3:1 ratio: concentrate = cupOz/4, milk = cupOz*3/4
+  const concentrateMl = (cupOz / 4) * 29.5735;
+  const milkOz = cupOz * 3 / 4;
+  const costPerMl = ch.price / ch.totalMl;
+  const ingredientCost = costPerMl * concentrateMl + milkCostPerOz * milkOz + cupCostGlobal;
+  const price = parseFloat(document.getElementById('chai-price-' + i)?.value);
+  document.getElementById('chai-cost-' + i).textContent = fmt(ingredientCost);
+  document.getElementById('chai-margin-' + i).innerHTML = marginBadge(price > 0 ? calcMargin(price, ingredientCost) : null);
+  recalcTeaSummary();
+}
+
+function recalcIcedChai(i) {
+  const ch = CHAI[i];
+  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const cupOz = parseFloat(document.getElementById('chai-iced-oz-' + i)?.value) || 16;
+  const liquidOz = cupOz === 16 ? 12 : 16;
+  const concentrateMl = (liquidOz / 4) * 29.5735;
+  const milkOz = liquidOz * 3 / 4;
+  const costPerMl = ch.price / ch.totalMl;
+  const ingredientCost = costPerMl * concentrateMl + milkCostPerOz * milkOz + cupCostGlobal;
+  const price = parseFloat(document.getElementById('chai-iced-price-' + i)?.value);
+  document.getElementById('chai-iced-cost-' + i).textContent = fmt(ingredientCost);
+  document.getElementById('chai-iced-margin-' + i).innerHTML = marginBadge(price > 0 ? calcMargin(price, ingredientCost) : null);
+  recalcTeaSummary();
+}
+
+function recalcTeaSummary() {
+  const margins = [];
+  TEA_PRODUCTS.filter(t => !t.isRetailBox).forEach((t, i) => {
+    let costEa = t.costEa;
+    if (t.isIced) {
+      const cupOz = parseFloat(document.getElementById('iced-tea-oz')?.value) || 16;
+      const liquidOz = cupOz === 16 ? 12 : 16;
+      costEa = (t.costEa / 128) * liquidOz;
+    }
+    const price = parseFloat(document.getElementById('tea-price-' + i)?.value);
+    if (price > 0) margins.push(calcMargin(price, costEa));
+  });
+  MATCHA_PRODUCTS.forEach((m2, i) => {
+    const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+    const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+    const cupOz = parseFloat(document.getElementById('matcha-oz-' + i)?.value) || m2.defaultCupOz;
+    const liquidOz = m2.sizeType === 'iced' ? (cupOz === 16 ? 12 : 16) : cupOz;
+    const milkOz = liquidOz - 2;
+    const costPerG = m2.price / m2.weightG;
+    const cost = (costPerG * m2.servingG) + (milkCostPerOz * milkOz) + cupCostGlobal;
+    const price = parseFloat(document.getElementById('matcha-price-' + i)?.value);
+    if (price > 0) margins.push(calcMargin(price, cost));
+  });
+  CHAI.forEach((ch, i) => {
+    const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
+    const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+    // Hot chai
+    const cupOz = parseFloat(document.getElementById('chai-oz-' + i)?.value) || 12;
+    const concentrateMl = (cupOz / 4) * 29.5735;
+    const milkOz = cupOz * 3 / 4;
+    const costPerMl = ch.price / ch.totalMl;
+    const cost = costPerMl * concentrateMl + milkCostPerOz * milkOz + cupCostGlobal;
+    const price = parseFloat(document.getElementById('chai-price-' + i)?.value);
+    if (price > 0) margins.push(calcMargin(price, cost));
+    // Iced chai
+    const icedCupOz = parseFloat(document.getElementById('chai-iced-oz-' + i)?.value) || 16;
+    const icedLiquidOz = icedCupOz === 16 ? 12 : 16;
+    const icedConcentrateMl = (icedLiquidOz / 4) * 29.5735;
+    const icedMilkOz = icedLiquidOz * 3 / 4;
+    const icedCost = costPerMl * icedConcentrateMl + milkCostPerOz * icedMilkOz + cupCostGlobal;
+    const icedPrice = parseFloat(document.getElementById('chai-iced-price-' + i)?.value);
+    if (icedPrice > 0) margins.push(calcMargin(icedPrice, icedCost));
+  });
+  const avg = margins.length ? margins.reduce((a,b) => a+b, 0) / margins.length : null;
+  updateSummary('sum-tea', avg);
+}
+
+
+// ── TAB 5: RETAIL BAGS ───────────────────────────────────────
+
+function buildRetailRows() {
+  document.getElementById('retail-rows').innerHTML = BLENDS.map((b, i) => {
+    const dot = `<span class="roast-dot roast-${b.roast.toLowerCase()}"></span>`;
+    return `
+    <tr>
+      <td><div class="drink-name">${b.name}</div></td>
+      <td class="center">${dot}${b.roast}</td>
+      <td class="right">${fmt(b.pBag)} <span style="font-size:11px;color:rgba(0,0,0,0.35)">ea</span></td>
+      <td class="right">$${b.msrp}</td>
+      <td class="center">${priceInput('retail-price-' + i, b.msrp || '', `recalcRetail(${i})`)}</td>
+      <td class="center" id="retail-margin-${i}">${marginBadge(null)}</td>
+    </tr>`;
+  }).join('');
+  BLENDS.forEach((_, i) => recalcRetail(i));
+}
+
+function recalcRetail(i) {
+  const b = BLENDS[i];
+  const price = parseFloat(document.getElementById('retail-price-' + i).value);
+  const m = calcMargin(price, b.pBag);
+  document.getElementById('retail-margin-' + i).innerHTML = price ? marginBadge(m) : marginBadge(null);
+  recalcRetailSummary();
+}
+
+function buildRetailTeaRows() {
+  const retailBox = TEA_PRODUCTS.find(t => t.isRetailBox);
+  if (!retailBox) return;
+  const costPerBox = retailBox.costEa * retailBox.sachetsPerBox;
+  document.getElementById('retail-tea-rows').innerHTML = `
+    <tr>
+      <td><div class="drink-name">${retailBox.name}</div><div class="drink-detail">${retailBox.detail}</div></td>
+      <td class="right">${fmt(costPerBox)} <span style="font-size:11px;color:rgba(0,0,0,0.35)">ea</span></td>
+      <td class="right">$${retailBox.defaultPrice.toFixed(2)}</td>
+      <td class="center">${priceInput('retail-tea-price-0', retailBox.defaultPrice || '', 'recalcRetailTea()')}</td>
+      <td class="center" id="retail-tea-margin-0">${marginBadge(null)}</td>
+    </tr>`;
+  recalcRetailTea();
+}
+
+function recalcRetailTea() {
+  const retailBox = TEA_PRODUCTS.find(t => t.isRetailBox);
+  if (!retailBox) return;
+  const costPerBox = retailBox.costEa * retailBox.sachetsPerBox;
+  const price = parseFloat(document.getElementById('retail-tea-price-0')?.value);
+  document.getElementById('retail-tea-margin-0').innerHTML = marginBadge(price > 0 ? calcMargin(price, costPerBox) : null);
+  recalcRetailSummary();
+}
+
+function recalcRetailSummary() {
+  const margins = [];
+  BLENDS.forEach((b, i) => {
+    const price = parseFloat(document.getElementById('retail-price-' + i)?.value);
+    if (price > 0) margins.push(calcMargin(price, b.pBag));
+  });
+  CANS.forEach((c, i) => {
+    const costPer = c.casePrice / c.cans;
+    const price = parseFloat(document.getElementById('can-price-' + i)?.value);
+    if (price > 0) margins.push(calcMargin(price, costPer));
+  });
+  const retailBox = TEA_PRODUCTS.find(t => t.isRetailBox);
+  if (retailBox) {
+    const price = parseFloat(document.getElementById('retail-tea-price-0')?.value);
+    if (price > 0) margins.push(calcMargin(price, retailBox.costEa * retailBox.sachetsPerBox));
+  }
+  const avg = margins.length ? margins.reduce((a,b) => a+b, 0) / margins.length : null;
+  updateSummary('sum-retail', avg);
+}
+
+
+// ── SUMMARY STRIP ────────────────────────────────────────────
+
+function updateSummary(id, m) {
+  const el = document.getElementById(id);
+  el.textContent = (m != null && !isNaN(m)) ? pct(m) : '—';
+  el.className = 'summary-value ' + ((m != null && !isNaN(m)) ? marginColor(m) : '');
+}
+
+
+// ── ADMIN ACCOUNT SWITCHER ───────────────────────────────────
+
+const EXAMPLE_ACCOUNTS = [
+  // ── Admin ────────────────────────────────────────────────────
+  { name: 'All Products',                          tag: 'all' },
+  // ── Standard Café — no cans ──────────────────────────────────
+  { name: 'Standard Café',                         tag: 'standard-cafe' },
+  { name: 'Standard Café + PP',                    tag: 'standard-cafe-pp' },
+  // ── Standard Café — cans ─────────────────────────────────────
+  { name: 'Standard Café + Cans',                  tag: 'standard-cafe-cans' },
+  { name: 'Standard Café + Cans (Local DLV)',      tag: 'standard-cafe-cans-dlv' },
+  { name: 'Standard Café + Cans (Ship)',           tag: 'standard-cafe-cans-ship' },
+  { name: 'Standard Café + PP + Cans',             tag: 'standard-cafe-pp-cans' },
+  { name: 'Standard Café + PP + Cans (Local DLV)', tag: 'standard-cafe-pp-cans-dlv' },
+  { name: 'Standard Café + PP + Cans (Ship)',      tag: 'standard-cafe-pp-cans-ship' },
+  // ── Standard Café — kegs ─────────────────────────────────────
+  { name: 'Standard Café + Cans + Kegs',           tag: 'standard-cafe-cans-kegs' },
+  { name: 'Standard Café + PP + Cans + Kegs',      tag: 'standard-cafe-pp-cans-kegs' },
+  // ── Standard Café — sankey ───────────────────────────────────
+  { name: 'Standard Café + Cans + Sankey',         tag: 'standard-cafe-cans-sankey' },
+  { name: 'Standard Café + PP + Cans + Sankey',    tag: 'standard-cafe-pp-cans-sankey' },
+  // ── Internal ─────────────────────────────────────────────────
+  { name: 'Atomic Café (Internal)',                tag: 'atomic-cafe' },
+  // ── Local Market ─────────────────────────────────────────────
+  { name: 'Local Market',                          tag: 'local-market' },
+  { name: 'Local Market + Cans',                   tag: 'local-market-cans' },
+  // ── Distributors ─────────────────────────────────────────────
+  { name: 'Boston Bean (Distributor)',             tag: 'boston-bean-catalog' },
+  { name: 'Compass Group (Distributor)',           tag: 'compass-group-catalog' },
+  { name: 'Distro Cans + Sankey',                  tag: 'distro-cans-sankey' },
+  { name: 'Metro',                                 tag: 'metro' },
+];
+
+let currentAccountIdx = 0;
+
+function getAccess(tag) {
+  if (tag === 'all' || tag === 'atomic-cafe')
+    return { hasCafe: true,  hasCans: true,  hasKegs: true,  hasSankey: true  };
+  if (tag === 'boston-bean-catalog')
+    return { hasCafe: false, hasCans: true,  hasKegs: true,  hasSankey: false };
+  if (tag === 'compass-group-catalog')
+    return { hasCafe: false, hasCans: true,  hasKegs: true,  hasSankey: true  };
+  if (tag === 'distro-cans-sankey')
+    return { hasCafe: false, hasCans: true,  hasKegs: false, hasSankey: true  };
+  if (tag === 'metro')
+    return { hasCafe: false, hasCans: false, hasKegs: false, hasSankey: true  };
+  if (tag === 'local-market')
+    return { hasCafe: false, hasCans: false, hasKegs: false, hasSankey: false };
+  if (tag === 'local-market-cans')
+    return { hasCafe: false, hasCans: true,  hasKegs: false, hasSankey: false };
+  return {
+    hasCafe:   true,
+    hasCans:   tag.includes('-cans'),
+    hasKegs:   tag.includes('-kegs'),
+    hasSankey: tag.includes('-sankey'),
+  };
+}
+
+function buildAdminSwitcher() {
+  const sel = document.getElementById('account-select');
+  sel.innerHTML = EXAMPLE_ACCOUNTS.map((a, i) =>
+    `<option value="${i}"${i === currentAccountIdx ? ' selected' : ''}>${a.name}</option>`
+  ).join('');
+}
+
+function selectAccount(i) {
+  currentAccountIdx = i;
+  applyAccountFilter();
+  recalcAll();
+}
+
+function applyAccountFilter() {
+  const acc = EXAMPLE_ACCOUNTS[currentAccountIdx];
+  const ac  = getAccess(acc.tag);
+
+  // Espresso, Drip, Tea tabs — cafe accounts only
+  document.getElementById('tab-btn-espresso').style.display = ac.hasCafe ? '' : 'none';
+  document.getElementById('tab-btn-drip').style.display     = ac.hasCafe ? '' : 'none';
+  document.getElementById('tab-btn-tea').style.display      = ac.hasCafe ? '' : 'none';
+
+  // Cold Brew & Kegs tab — only show if they have kegs or sankey
+  const showCBTab = ac.hasKegs || ac.hasSankey;
+  document.getElementById('tab-btn-coldbrew').style.display = showCBTab ? '' : 'none';
+
+  // Retail Bags tab — show for cafe accounts or anyone with cans
+  document.getElementById('tab-btn-retail').style.display = (ac.hasCafe || ac.hasCans) ? '' : 'none';
+
+  // If the currently active tab just got hidden, switch to the first visible one
+  const activePanel = document.querySelector('.tab-panel.active');
+  const activePanelId = activePanel ? activePanel.id : '';
+  const cafeHidden = !ac.hasCafe && ['tab-espresso','tab-drip','tab-tea'].includes(activePanelId);
+  const cbHidden   = !showCBTab  && activePanelId === 'tab-coldbrew';
+  const retHidden  = !(ac.hasCafe || ac.hasCans) && activePanelId === 'tab-retail';
+  if (cafeHidden || cbHidden || retHidden) {
+    if (showCBTab)               switchTab('coldbrew');
+    else if (ac.hasCafe)         switchTab('espresso');
+    else if (ac.hasCafe || ac.hasCans) switchTab('retail');
+  }
+
+  // Individual keg rows
+  KEGS.forEach((k, i) => {
+    const row = document.getElementById('keg-row-' + i);
+    if (!row) return;
+    const show = k.cat === 'Kombucha' ? (ac.hasKegs || ac.hasSankey) : ac.hasKegs;
+    row.style.display = show ? '' : 'none';
+  });
+
+  // Retail tab — hide cans sections for non-cans accounts
+  document.getElementById('retail-cb-cans-card').style.display      = ac.hasCans ? '' : 'none';
+  document.getElementById('retail-kombucha-cans-card').style.display = ac.hasCans ? '' : 'none';
+}
+
+
+// ── INIT ─────────────────────────────────────────────────────
+
+buildAdminSwitcher();
+buildEspressoRows();
+buildDripRows();
+buildCanCards();
+buildKegCards();
+buildTeaCards();
+buildRetailRows();
+buildRetailTeaRows();
+applyAccountFilter();
+recalcAll();
+initCollapsible();
+
+function initCollapsible() {
+  document.querySelectorAll('.card-header').forEach(header => {
+    // Inject chevron if not already there
+    if (!header.querySelector('.card-chevron')) {
+      const chev = document.createElement('span');
+      chev.className = 'card-chevron';
+      chev.textContent = '▾';
+      header.appendChild(chev);
+    }
+    header.addEventListener('click', () => {
+      header.closest('.card').classList.toggle('collapsed');
+    });
+  });
+}
+</script>
+</body>
+</html>
