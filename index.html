@@ -525,16 +525,6 @@
         </div>
 
         <div class="sp-field">
-          <label>Non-Dairy Milk (Oat, Almond, etc.)</label>
-          <div class="dist-input-row">
-            <span class="dist-symbol">$</span>
-            <input class="dist-input" type="number" id="g-nondairy" value="9.00" min="0" step="0.25" oninput="recalcAll()">
-            <span class="dist-unit">per quart (32 oz)</span>
-          </div>
-          <div class="sp-note-small">Used as alternate milk in margin calculations</div>
-        </div>
-
-        <div class="sp-field">
           <label>Cups &amp; Lids</label>
           <div class="dist-input-row">
             <span class="dist-symbol">$</span>
@@ -890,7 +880,7 @@ const BLENDS = [
   { name:'Burundi Ngozi',            roast:'Light',  type:'limited',p5:69.00, p2:29.00, pBag:11.50, msrp:20 },
   { name:'Burundi Rimiro',           roast:'Light',  type:'limited',p5:69.00, p2:29.00, pBag:11.50, msrp:20 },
   { name:'Honduras Manos de Mujer',  roast:'Light',  type:'limited',p5:67.00, p2:28.00, pBag:11.16, msrp:20 },
-  { name:'Single Track',             roast:'Medium', type:'limited',p5:63.00, p2:23.00, pBag:10.50, msrp:20 },
+  { name:'Single Track',             roast:'Medium', type:'limited',p5:63.00, p2:26.00, pBag:10.50, msrp:20 },
 ];
 
 const ESP_DRINKS = [
@@ -919,7 +909,7 @@ const CANS = [
   { cat:'Cold Brew', name:'The Original',  detail:'Medium roast · House Blend',              casePrice:33, cans:12, msrp:4 },
   { cat:'Cold Brew', name:'The Nitro',     detail:'Dark roast · nitrogen-infused',            casePrice:33, cans:12, msrp:4 },
   { cat:'Cold Brew', name:'The Decaf',     detail:'Daydream Decaf blend',                     casePrice:33, cans:12, msrp:4 },
-  { cat:'Cold Brew', name:'Single Track',  detail:'NEMBA benefit · $2/bag donated',           casePrice:33, cans:12, msrp:4 },
+  { cat:'Cold Brew', name:'Single Track',  detail:'NEMBA benefit · $2/bag donated',           casePrice:32, cans:12, msrp:4 },
   { cat:'Kombucha',  name:'Hibiscus Ginger',       detail:'Floral & spicy · Pigeon Cove',     casePrice:25, cans:12, msrp:null },
   { cat:'Kombucha',  name:'Raspberry Basil',        detail:'Fruity & herbaceous · Pigeon Cove',casePrice:25, cans:12, msrp:null },
   { cat:'Kombucha',  name:'Blueberry Cinnamon',     detail:'Wild Maine blueberries · Pigeon Cove', casePrice:25, cans:12, msrp:null },
@@ -958,6 +948,10 @@ const CHAI = [
 
 function fmt(n) { return n == null ? '—' : '$' + n.toFixed(2); }
 function pct(n) { return n == null ? '—' : Math.round(n * 100) + '%'; }
+function inputVal(id, fallback) {
+  const v = parseFloat(document.getElementById(id)?.value);
+  return isNaN(v) ? fallback : v;
+}
 
 function marginBadge(m) {
   if (m == null || isNaN(m)) return '<span class="badge badge-gray">—</span>';
@@ -1015,7 +1009,11 @@ function buildEspressoRows() {
 function recalcAll() {
   recalcEspresso();
   recalcDrip();
-  buildTeaCards();
+  recalcTea(0);
+  recalcTea(1);
+  MATCHA_PRODUCTS.forEach((_, i) => recalcMatcha(i));
+  CHAI.forEach((_, i) => recalcChai(i));
+  CHAI.forEach((_, i) => recalcIcedChai(i));
   KEGS.forEach((_, i) => recalcKeg(i));
 }
 
@@ -1023,9 +1021,9 @@ function recalcEspresso() {
   const blendEl = document.getElementById('g-esp-blend');
   const p5lb   = parseFloat(blendEl?.value) || 0;
   const dose   = parseFloat(document.getElementById('g-dose').value) || 18;
-  const milkGal= parseFloat(document.getElementById('g-milk').value) || 6;
-  const cupCase= parseFloat(document.getElementById('g-cups').value) || 45;
-  const syrupBottle = parseFloat(document.getElementById('g-syrup').value) || 8.00;
+  const milkGal= inputVal('g-milk', 6);
+  const cupCase= inputVal('g-cups', 45);
+  const syrupBottle = inputVal('g-syrup', 8);
   const syrupOz = syrupBottle / (750 / 29.5735); // cost per oz (750ml ÷ 29.57ml/oz ≈ 25.36 oz/bottle)
 
   const costPerG  = p5lb / 2268;
@@ -1119,7 +1117,7 @@ function buildDripRows() {
 
 function recalcDrip() {
   const ratio  = parseFloat(document.getElementById('g-brew-ratio').value) || 215;
-  const cupCase= parseFloat(document.getElementById('g-cups').value) || 45;
+  const cupCase= inputVal('g-cups', 45);
 
   const gallonsPerBag = 2268 / ratio;
   const ozPerBag      = gallonsPerBag * 128;
@@ -1223,7 +1221,7 @@ function recalcKeg(i) {
   const ozTotal  = k.gallons * 128;
   const cupOz    = parseFloat(document.getElementById('keg-oz-' + i).value) || 16;
   const liquidOz = cupOz === 16 ? 12 : 16;
-  const cupCost  = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const cupCost  = inputVal('g-cups', 45) / 500;
   const price    = parseFloat(document.getElementById('keg-price-' + i).value);
   const servings = Math.floor(ozTotal / liquidOz);
   const costEa   = (k.price / ozTotal) * liquidOz + cupCost;
@@ -1237,7 +1235,7 @@ function recalcKeg(i) {
 }
 
 function recalcCBSummary() {
-  const cupCost = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const cupCost = inputVal('g-cups', 45) / 500;
   const prices = [], costs = [], margins = [];
   KEGS.forEach((k, i) => {
     const ozTotal = k.gallons * 128;
@@ -1259,8 +1257,8 @@ function recalcCBSummary() {
 // ── TAB 4: TEA ───────────────────────────────────────────────
 
 function buildTeaCards() {
-  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const milkCostPerOz = inputVal('g-milk', 6) / 128;
+  const cupCostGlobal = inputVal('g-cups', 45) / 500;
   const sel = `style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;width:100%"`;
 
   // ── HOT TEAS: Hot Tea, Hot Barista Matcha, Hot Premium Matcha, Chai ──
@@ -1426,8 +1424,8 @@ function recalcTea(i) {
 
 function recalcMatcha(i) {
   const m2 = MATCHA_PRODUCTS[i];
-  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const milkCostPerOz = inputVal('g-milk', 6) / 128;
+  const cupCostGlobal = inputVal('g-cups', 45) / 500;
   const cupOz = parseFloat(document.getElementById('matcha-oz-' + i)?.value) || m2.defaultCupOz;
   const liquidOz = m2.sizeType === 'iced' ? (cupOz === 16 ? 12 : 16) : cupOz;
   const milkOz = liquidOz - 2;
@@ -1441,8 +1439,8 @@ function recalcMatcha(i) {
 
 function recalcChai(i) {
   const ch = CHAI[i];
-  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const milkCostPerOz = inputVal('g-milk', 6) / 128;
+  const cupCostGlobal = inputVal('g-cups', 45) / 500;
   const cupOz = parseFloat(document.getElementById('chai-oz-' + i)?.value) || 12;
   // 3:1 ratio: concentrate = cupOz/4, milk = cupOz*3/4
   const concentrateMl = (cupOz / 4) * 29.5735;
@@ -1457,8 +1455,8 @@ function recalcChai(i) {
 
 function recalcIcedChai(i) {
   const ch = CHAI[i];
-  const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-  const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+  const milkCostPerOz = inputVal('g-milk', 6) / 128;
+  const cupCostGlobal = inputVal('g-cups', 45) / 500;
   const cupOz = parseFloat(document.getElementById('chai-iced-oz-' + i)?.value) || 16;
   const liquidOz = cupOz === 16 ? 12 : 16;
   const concentrateMl = (liquidOz / 4) * 29.5735;
@@ -1484,8 +1482,8 @@ function recalcTeaSummary() {
     if (price > 0) margins.push(calcMargin(price, costEa));
   });
   MATCHA_PRODUCTS.forEach((m2, i) => {
-    const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-    const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+    const milkCostPerOz = inputVal('g-milk', 6) / 128;
+    const cupCostGlobal = inputVal('g-cups', 45) / 500;
     const cupOz = parseFloat(document.getElementById('matcha-oz-' + i)?.value) || m2.defaultCupOz;
     const liquidOz = m2.sizeType === 'iced' ? (cupOz === 16 ? 12 : 16) : cupOz;
     const milkOz = liquidOz - 2;
@@ -1495,8 +1493,8 @@ function recalcTeaSummary() {
     if (price > 0) margins.push(calcMargin(price, cost));
   });
   CHAI.forEach((ch, i) => {
-    const milkCostPerOz = (parseFloat(document.getElementById('g-milk')?.value) || 6) / 128;
-    const cupCostGlobal = (parseFloat(document.getElementById('g-cups')?.value) || 45) / 500;
+    const milkCostPerOz = inputVal('g-milk', 6) / 128;
+    const cupCostGlobal = inputVal('g-cups', 45) / 500;
     // Hot chai
     const cupOz = parseFloat(document.getElementById('chai-oz-' + i)?.value) || 12;
     const concentrateMl = (cupOz / 4) * 29.5735;
